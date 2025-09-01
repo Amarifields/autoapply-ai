@@ -78,15 +78,11 @@ export default function Home() {
       <div className="w-full max-w-3xl mx-auto p-6">
         <div className="text-center mb-12">
           <h1 className="text-6xl font-bold text-white mb-6 tracking-tight">
-            AutoApply AI
+            AutoApply
           </h1>
           <p className="text-2xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
             Transform your resume into interview-winning applications with
-            personalized,
-            <span className="text-blue-400 font-semibold">
-              {" "}
-              AI-powered optimization
-            </span>
+            personalized optimization
           </p>
         </div>
 

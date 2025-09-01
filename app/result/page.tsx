@@ -10,6 +10,9 @@ export default function Result() {
   const [coverLetter, setCoverLetter] = useState("");
   const [resumeSnippet, setResumeSnippet] = useState("");
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error">("success");
   const coverLetterRef = useRef<HTMLDivElement>(null);
   const resumeRef = useRef<HTMLDivElement>(null);
 
@@ -32,6 +35,13 @@ export default function Result() {
       }
     }
   }, [searchParams]);
+
+  const displayToast = (message: string, type: "success" | "error" = "success") => {
+    setToastMessage(message);
+    setToastType(type);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
 
   const generateFileName = (type: string): string => {
     const timestamp = new Date().toISOString().slice(0, 10);
@@ -82,7 +92,7 @@ export default function Result() {
       }
     }
 
-    return "march_fields";
+    return "applicant";
   };
 
   const extractJobTitle = (): string => {
@@ -104,32 +114,13 @@ export default function Result() {
     return "professional";
   };
 
-  const copyToClipboard = async (
-    content: string,
-    type: string,
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
+  const copyToClipboard = async (content: string, type: string) => {
     try {
       await navigator.clipboard.writeText(content);
-      const button = event.currentTarget;
-      const originalText = button.innerHTML;
-      button.innerHTML = `
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>
-        <span>Copied!</span>
-      `;
-      button.classList.add("bg-green-600", "hover:bg-green-700");
-      button.classList.remove("bg-slate-600", "hover:bg-slate-500");
-
-      setTimeout(() => {
-        button.innerHTML = originalText;
-        button.classList.remove("bg-green-600", "hover:bg-green-700");
-        button.classList.add("bg-slate-600", "hover:bg-slate-500");
-      }, 2000);
+      displayToast(`${type} copied to clipboard!`);
     } catch (err) {
       console.error("Failed to copy: ", err);
-      alert("Failed to copy to clipboard. Please try again.");
+      displayToast("Failed to copy to clipboard", "error");
     }
   };
 
@@ -143,7 +134,7 @@ export default function Result() {
     setIsGeneratingPDF(true);
     try {
       const canvas = await html2canvas(ref.current, {
-        scale: 3,
+        scale: 4,
         useCORS: true,
         backgroundColor: "#ffffff",
         width: 794,
@@ -155,33 +146,36 @@ export default function Result() {
         scrollX: 0,
         scrollY: 0,
         foreignObjectRendering: true,
+        imageTimeout: 0,
+        removeContainer: true,
       });
 
       const imgData = canvas.toDataURL("image/png", 1.0);
       const pdf = new jsPDF("p", "pt", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pdfWidth - 60;
+      const imgWidth = pdfWidth - 40;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
 
-      let position = 30;
+      let position = 20;
 
-      pdf.addImage(imgData, "PNG", 30, position, imgWidth, imgHeight);
-      heightLeft -= (pdfHeight - 60);
+      pdf.addImage(imgData, "PNG", 20, position, imgWidth, imgHeight);
+      heightLeft -= (pdfHeight - 40);
 
       while (heightLeft >= 0) {
-        position = heightLeft - imgHeight + 30;
+        position = heightLeft - imgHeight + 20;
         pdf.addPage();
-        pdf.addImage(imgData, "PNG", 30, position, imgWidth, imgHeight);
-        heightLeft -= (pdfHeight - 60);
+        pdf.addImage(imgData, "PNG", 20, position, imgWidth, imgHeight);
+        heightLeft -= (pdfHeight - 40);
       }
 
       const fileName = generateFileName(type);
       pdf.save(`${fileName}.pdf`);
+      displayToast("PDF downloaded successfully!");
     } catch (error) {
       console.error("PDF generation error:", error);
-      alert("Error generating PDF. Please try again.");
+      displayToast("Error generating PDF", "error");
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -198,14 +192,38 @@ export default function Result() {
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
+    displayToast("Text file downloaded successfully!");
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {showToast && (
+        <div className="fixed top-4 right-4 z-50">
+          <div className={`px-6 py-4 rounded-xl shadow-2xl border backdrop-blur-sm transition-all duration-300 ${
+            toastType === "success" 
+              ? "bg-green-500/90 border-green-400 text-white" 
+              : "bg-red-500/90 border-red-400 text-white"
+          }`}>
+            <div className="flex items-center space-x-3">
+              {toastType === "success" ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+              <span className="font-medium">{toastMessage}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         <div className="text-center space-y-6">
           <h1 className="text-5xl font-bold text-white tracking-tight">
-            Your Tailored Application
+            Your Application
           </h1>
           <p className="text-xl text-slate-300 max-w-2xl mx-auto">
             Professionally crafted to maximize your interview chances
@@ -241,12 +259,10 @@ export default function Result() {
                     </p>
                   </div>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex space-x-3">
                   <button
-                    onClick={(e) =>
-                      copyToClipboard(coverLetter, "cover_letter", e)
-                    }
-                    className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white text-sm rounded-lg transition-all duration-200 border border-slate-500 hover:border-slate-400 flex items-center space-x-2"
+                    onClick={() => copyToClipboard(coverLetter, "Cover letter")}
+                    className="px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-white text-sm font-medium rounded-lg transition-all duration-200 border border-slate-500 hover:border-slate-400 flex items-center space-x-2 min-w-[100px] justify-center"
                   >
                     <svg
                       className="w-4 h-4"
@@ -265,7 +281,7 @@ export default function Result() {
                   </button>
                   <button
                     onClick={() => downloadAsText(coverLetter, "cover_letter")}
-                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg transition-all duration-200 border border-slate-600 hover:border-slate-500"
+                    className="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-all duration-200 border border-slate-600 hover:border-slate-500 min-w-[80px]"
                   >
                     TXT
                   </button>
@@ -274,7 +290,7 @@ export default function Result() {
                       generatePDF(coverLetter, "cover_letter", coverLetterRef)
                     }
                     disabled={isGeneratingPDF}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-all duration-200 flex items-center space-x-2"
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-all duration-200 flex items-center space-x-2 min-w-[100px] justify-center"
                   >
                     {isGeneratingPDF ? (
                       <>
@@ -360,10 +376,10 @@ export default function Result() {
                     </p>
                   </div>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex space-x-3">
                   <button
-                    onClick={(e) => copyToClipboard(resumeSnippet, "resume", e)}
-                    className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white text-sm rounded-lg transition-all duration-200 border border-slate-500 hover:border-slate-400 flex items-center space-x-2"
+                    onClick={() => copyToClipboard(resumeSnippet, "Resume")}
+                    className="px-6 py-2.5 bg-slate-600 hover:bg-slate-500 text-white text-sm font-medium rounded-lg transition-all duration-200 border border-slate-500 hover:border-slate-400 flex items-center space-x-2 min-w-[100px] justify-center"
                   >
                     <svg
                       className="w-4 h-4"
@@ -382,7 +398,7 @@ export default function Result() {
                   </button>
                   <button
                     onClick={() => downloadAsText(resumeSnippet, "resume")}
-                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-lg transition-all duration-200 border border-slate-600 hover:border-slate-500"
+                    className="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-all duration-200 border border-slate-600 hover:border-slate-500 min-w-[80px]"
                   >
                     TXT
                   </button>
@@ -391,7 +407,7 @@ export default function Result() {
                       generatePDF(resumeSnippet, "resume", resumeRef)
                     }
                     disabled={isGeneratingPDF}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-all duration-200 flex items-center space-x-2"
+                    className="px-6 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-all duration-200 flex items-center space-x-2 min-w-[100px] justify-center"
                   >
                     {isGeneratingPDF ? (
                       <>
