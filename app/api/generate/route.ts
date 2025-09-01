@@ -5,6 +5,9 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Debug: Check if API key is loaded
+console.log("API Key loaded:", process.env.OPENAI_API_KEY ? "YES" : "NO");
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
