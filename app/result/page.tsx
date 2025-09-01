@@ -143,7 +143,7 @@ export default function Result() {
     setIsGeneratingPDF(true);
     try {
       const canvas = await html2canvas(ref.current, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         backgroundColor: "#ffffff",
         width: 794,
@@ -154,26 +154,27 @@ export default function Result() {
         allowTaint: true,
         scrollX: 0,
         scrollY: 0,
+        foreignObjectRendering: true,
       });
 
       const imgData = canvas.toDataURL("image/png", 1.0);
       const pdf = new jsPDF("p", "pt", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pdfWidth - 80;
+      const imgWidth = pdfWidth - 60;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
 
-      let position = 40;
+      let position = 30;
 
-      pdf.addImage(imgData, "PNG", 40, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight - 80;
+      pdf.addImage(imgData, "PNG", 30, position, imgWidth, imgHeight);
+      heightLeft -= (pdfHeight - 60);
 
       while (heightLeft >= 0) {
-        position = heightLeft - imgHeight + 40;
+        position = heightLeft - imgHeight + 30;
         pdf.addPage();
-        pdf.addImage(imgData, "PNG", 40, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight - 80;
+        pdf.addImage(imgData, "PNG", 30, position, imgWidth, imgHeight);
+        heightLeft -= (pdfHeight - 60);
       }
 
       const fileName = generateFileName(type);
@@ -305,19 +306,25 @@ export default function Result() {
                 ref={coverLetterRef}
                 className="bg-white rounded-xl shadow-inner"
                 style={{
-                  fontFamily: "Arial, sans-serif",
-                  fontSize: "14px",
-                  lineHeight: "1.6",
-                  minHeight: "400px",
-                  padding: "40px",
+                  fontFamily: "Georgia, serif",
+                  fontSize: "12px",
+                  lineHeight: "1.8",
+                  minHeight: "500px",
+                  padding: "50px",
                   margin: "0",
                   width: "100%",
                   boxSizing: "border-box",
+                  color: "#2d3748",
+                  letterSpacing: "0.3px",
                 }}
               >
                 <div
-                  className="whitespace-pre-wrap text-slate-800 leading-relaxed"
-                  style={{ margin: "0" }}
+                  className="whitespace-pre-wrap leading-relaxed"
+                  style={{ 
+                    margin: "0",
+                    textAlign: "justify",
+                    wordSpacing: "1px"
+                  }}
                 >
                   {coverLetter}
                 </div>
@@ -416,19 +423,25 @@ export default function Result() {
                 ref={resumeRef}
                 className="bg-white rounded-xl shadow-inner"
                 style={{
-                  fontFamily: "Arial, sans-serif",
-                  fontSize: "14px",
-                  lineHeight: "1.6",
-                  minHeight: "400px",
-                  padding: "40px",
+                  fontFamily: "Calibri, Arial, sans-serif",
+                  fontSize: "11px",
+                  lineHeight: "1.4",
+                  minHeight: "600px",
+                  padding: "45px",
                   margin: "0",
                   width: "100%",
                   boxSizing: "border-box",
+                  color: "#1a202c",
+                  letterSpacing: "0.2px",
                 }}
               >
                 <div
-                  className="whitespace-pre-wrap text-slate-800 leading-relaxed"
-                  style={{ margin: "0" }}
+                  className="whitespace-pre-wrap leading-relaxed"
+                  style={{ 
+                    margin: "0",
+                    textAlign: "left",
+                    wordSpacing: "0.5px"
+                  }}
                 >
                   {resumeSnippet}
                 </div>
